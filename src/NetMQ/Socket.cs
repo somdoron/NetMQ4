@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NetMQ.Core;
 using NetMQ.Protocol;
+using NetMQ.Transport;
 using NetMQ.Transport.InProc;
 using NetMQ.Util;
 
@@ -26,7 +27,9 @@ namespace NetMQ
         private SocketMailbox m_mailbox;
         private List<Pipe> m_pipes;
 
-        private Dictionary<string, Pipe> m_inprocs;
+        private IDictionary<string, BaseTransport> m_transports; 
+
+        private Dictionary<string, Pipe> m_inprocs;        
 
         private bool m_disposed;
         private long m_lastTimestamp;
@@ -36,13 +39,14 @@ namespace NetMQ
 
         protected Socket(Func<SocketOptions, BaseProtocol> protocolFactory) : base(new SocketOptions())
         {
-            m_inprocs = new Dictionary<string, Pipe>();
+            m_inprocs = new Dictionary<string, Pipe>();            
             m_mailbox = new SocketMailbox();
 
             SlotId = SocketManager.AddMailbox(m_mailbox);            
             m_pipes = new List<Pipe>();
             m_disposed = false;
             m_protocol = protocolFactory(Options);
+            m_transports = new Dictionary<string, BaseTransport>();
         }
 
         public bool HasOut
@@ -250,7 +254,21 @@ namespace NetMQ
             m_pipes.Remove(e.Pipe);            
 
             if (IsDisposing)
-                UnregisterDisposeAcks(1);
+                UnregisterDisposeAck();
+        }
+
+        private bool TryGetTransport(string protocol, out BaseTransport transport)
+        {
+            if (m_transports.TryGetValue(protocol, out transport))
+                return true;
+            else if (TransportManager.TryCreateTransport(this, protocol, out transport))
+            {
+                m_transports.Add(protocol, transport);
+                LaunchChild(transport);
+                return true;
+            }
+
+            return false;            
         }
 
         public void Bind(string address)
@@ -261,15 +279,27 @@ namespace NetMQ
             Core.Uri uri;
             if (!Core.Uri.TryParse(address, out uri))
                 throw new ArgumentException("uri not valid ", "address");
-
-            switch (uri.Protocol)
+            
+            if (uri.Protocol == "inproc")
             {
-                case "inproc":
-                    if (!InProcManager.TryRegisterEndpoint(this, address))                                       
-                        throw new NetMQException(ErrorCode.AddressAlreadyInUse);
-                    break;
-                default:
+                if (!InProcManager.TryRegisterEndpoint(this, address))
+                    throw new NetMQException(ErrorCode.AddressAlreadyInUse);
+            }
+            else
+            {
+                BaseTransport transport;
+
+                if (TryGetTransport(uri.Protocol, out transport))
+                {
+                    if (!transport.ValidateBindUri(uri))
+                        throw new ArgumentException("uri not valid", "address");
+
+                    transport.Bind(uri);                    
+                }
+                else
+                {
                     throw new ArgumentOutOfRangeException();
+                }
             }
         }
 
@@ -403,7 +433,7 @@ namespace NetMQ
             base.Process(command);
         }
 
-        internal void Process(DisposeCommand command)
+        internal override void Process(DisposeCommand command)
         {
             //  Unregister all inproc endpoints associated with this socket.
             //  Doing this we make sure that no new pipes from other sockets (inproc)
@@ -430,14 +460,23 @@ namespace NetMQ
         {
             base.Dispose();
 
-            // wait until socket is disposed
-            while (!m_disposed)
+            if (m_disposed)
+                SocketManager.RemoveMailbox(SlotId);
+            else
             {
-                ProcessCommands(Timeout.InfiniteTimeSpan, false);
-            }
+                // Completion in thread is not possible as Multiple inproc can be dependent on each other to complete dispose and might be using the same thread
+                ThreadPool.QueueUserWorkItem(s =>
+                {
+                    // wait until socket is disposed
+                    while (!m_disposed)
+                    {
+                        ProcessCommands(Timeout.InfiniteTimeSpan, false);
+                    }
 
-            // Remove the mailbox from global
-            SocketManager.RemoveMailbox(SlotId);
+                    // Remove the mailbox from global
+                    SocketManager.RemoveMailbox(SlotId);
+                });
+            }
         }        
     }
 }

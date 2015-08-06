@@ -9,6 +9,7 @@ namespace NetMQ.Core
 {
     public class SocketManager
     {
+        public const int IOThreadSlotId = 0;
         const int MaximumSockets = 1023;
 
         private static bool s_active;
@@ -29,6 +30,8 @@ namespace NetMQ.Core
                 s_emptySlots.Enqueue(i);
             }           
         }
+
+        
 
         static private void Activate()
         {

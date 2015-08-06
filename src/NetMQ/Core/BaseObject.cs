@@ -29,7 +29,7 @@ namespace NetMQ.Core
 
         internal protected int SlotId { get; internal set; }
         
-        internal virtual void ProcessPlug(PlugCommand command)
+        internal virtual void Process(PlugCommand command)
         {
             throw new NotImplementedException();
         }

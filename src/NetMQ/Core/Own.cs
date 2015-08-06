@@ -30,14 +30,24 @@ namespace NetMQ.Core
         //  Number of events we have to get before we can dispose the object.
         private int m_disposeAcks;
 
-        internal Own(SocketOptions socketOptions)
+        internal Own(Own parent) : base(parent)
+        {
+            Options = parent.Options;
+            m_disposing = false;
+            m_sentSequenceNumber = new AtomicCounter(0);
+            m_processedSequenceNumber = 0;
+            m_disposeAcks = 0;
+            m_owned = new List<Own>();        
+        }
+
+        internal Own(SocketOptions socketOptions) : base(SocketManager.IOThreadSlotId) 
         {
             Options = socketOptions;
             m_disposing = false;
             m_sentSequenceNumber = new AtomicCounter(0);
             m_processedSequenceNumber = 0;
             m_disposeAcks = 0;
-            m_owned = new List<Own>();
+            m_owned = new List<Own>();            
         }
 
         internal Own(int slotId)
@@ -48,17 +58,7 @@ namespace NetMQ.Core
             m_processedSequenceNumber = 0;            
             m_disposeAcks = 0;
             m_owned = new List<Own>();
-        }
-
-        internal Own(IOThread thread, SocketOptions options) : base(thread)
-        {
-            Options = options;
-            m_disposing = false;
-            m_sentSequenceNumber = new AtomicCounter(0);
-            m_processedSequenceNumber = 0;            
-            m_disposeAcks = 0;
-            m_owned = new List<Own>();
-        } 
+        }      
         
         public SocketOptions Options { get; private set; }
 
@@ -93,7 +93,7 @@ namespace NetMQ.Core
             ProcessDisposeRequest(child);
         }
 
-        internal override void ProcessPlug(PlugCommand command)
+        internal override void Process(PlugCommand command)
         {
             ProcessSequenceNumber();
         }
@@ -192,16 +192,21 @@ namespace NetMQ.Core
 
             m_disposing = true;
             CheckDisposingAcks();
-        }        
+        }
+
+        internal override void Process(DisposeAckCommand command)
+        {
+            UnregisterDisposeAck();
+        }
 
         internal void RegisterDisposeAcks(int count)
         {
             m_disposeAcks += count;
         }
 
-        internal void UnregisterDisposeAcks(int count)
+        internal void UnregisterDisposeAck()
         {            
-            m_disposeAcks -= count;
+            m_disposeAcks -= 1;
             
             //  This may be a last ack we are waiting for before termination...
             CheckDisposingAcks();

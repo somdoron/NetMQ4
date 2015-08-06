@@ -3,6 +3,8 @@
     public enum ErrorCode
     {
         TooManyOpenSockets,
-        AddressAlreadyInUse
+        AddressAlreadyInUse,
+        Invalid,
+        Unknown
     }
 }
