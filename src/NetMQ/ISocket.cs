@@ -6,14 +6,12 @@ using System.Threading.Tasks;
 
 namespace NetMQ
 {
-    public interface ISocket
+    public interface ISocket : IDisposable
     {
         void Bind(string address);
         void Unbind(string address);
 
         void Connect(string address);
-        void Disconnect(string address);
-
-
+        void Disconnect(string address);      
     }
 }

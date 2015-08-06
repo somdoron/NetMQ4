@@ -82,12 +82,12 @@ namespace NetMQ.Transport.Tcp
             base.Process(command);
         }
 
-        internal override void Process(DisposeCommand command)
+        internal override void Process(CloseCommand command)
         {
             base.Process(command);
         }
 
-        protected override void ProcessDisposed()
+        protected override void ProcessClosed()
         {
             
         }

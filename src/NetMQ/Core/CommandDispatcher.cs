@@ -30,21 +30,21 @@ namespace NetMQ.Core
             SendCommand(command);
         }
 
-        public static void SendDispose(Own destination, TimeSpan linger)
+        public static void SendClose(Own destination, TimeSpan linger)
         {
-            var command = new DisposeCommand(destination, linger);
+            var command = new CloseCommand(destination, linger);
             SendCommand(command);
         }
 
-        public static void SendDisposeRequest(Own destination, Own child)
+        public static void SendCloseRequest(Own destination, Own child)
         {
-            var command = new DisposeRequestCommand(destination, child);
+            var command = new CloseRequestCommand(destination, child);
             SendCommand(command);
         }
 
-        public static void SendDisposeAck(Own destination)
+        public static void SendCloseAck(Own destination)
         {
-            var command = new DisposeAckCommand(destination);
+            var command = new CloseAckCommand(destination);
             SendCommand(command);
         }
 
@@ -75,15 +75,9 @@ namespace NetMQ.Core
             SendCommand(command);
         }
 
-        public static void SendPipeDisposeAck(Pipe destination)
+        public static void SendClosePipe(Pipe destination)
         {
-            var command = new PipeDisposeAckCommand(destination);
-            SendCommand(command);
-        }
-
-        public static void SendPipeDispose(Pipe destination)
-        {
-            var command = new PipeDisposeCommand(destination);
+            var command = new ClosePipeCommand(destination);
             SendCommand(command);
         }
 

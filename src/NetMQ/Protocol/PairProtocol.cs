@@ -22,10 +22,10 @@ namespace NetMQ.Protocol
             if (m_pipe == null)
                 m_pipe = pipe;
             else
-                pipe.Dispose(false);
+                pipe.Close(false);
         }
 
-        protected internal override void OnPipeDisposed(Pipe pipe)
+        protected internal override void OnPipeClosed(Pipe pipe)
         {
             if (m_pipe == pipe)
             {

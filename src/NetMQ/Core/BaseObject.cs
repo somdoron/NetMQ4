@@ -64,27 +64,22 @@ namespace NetMQ.Core
             throw new NotImplementedException();
         }
 
-        internal virtual void Process(PipeDisposeCommand command)
+        internal virtual void Process(ClosePipeCommand command)
         {
             throw new NotImplementedException();
         }
 
-        internal virtual void Process(PipeDisposeAckCommand command)
+        internal virtual void Process(CloseRequestCommand command)
         {
             throw new NotImplementedException();
         }
 
-        internal virtual void Process(DisposeRequestCommand command)
+        internal virtual void Process(CloseCommand command)
         {
             throw new NotImplementedException();
         }
 
-        internal virtual void Process(DisposeCommand command)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal virtual void Process(DisposeAckCommand command)
+        internal virtual void Process(CloseAckCommand command)
         {
             throw new NotImplementedException();
         }

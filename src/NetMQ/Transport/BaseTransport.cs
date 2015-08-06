@@ -19,7 +19,7 @@ namespace NetMQ.Transport
 
         public abstract void Bind(Uri uri);
 
-        protected override void ProcessDisposed()
+        protected override void ProcessClosed()
         {
             
         }

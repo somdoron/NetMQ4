@@ -13,16 +13,16 @@ namespace NetMQ
         {            
             ReconnenctInterval = TimeSpan.FromMilliseconds(100);
             ReconnectIntervalMaximum = TimeSpan.Zero;
-            Linger = Timeout.InfiniteTimeSpan;
             Backlog = 100;
             SendHighWatermark = 1000;
             ReceiveHighwatermark = 1000;
             ReceiveIdentity = false;
+            Linger = Timeout.InfiniteTimeSpan;
         }
-        
-        public int Backlog { get; set; }
 
         public TimeSpan Linger { get; set; }
+        
+        public int Backlog { get; set; }
 
         public TimeSpan ReconnenctInterval { get; set; }
 

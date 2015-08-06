@@ -37,9 +37,7 @@ namespace NetMQ.Core
             Active,
             DelimiterReceived,
             WaitingForDelimiter,
-            DisposeAckSent,
-            DisposeRequestSent1,
-            DisposeRequestSent2
+            Closed
         }
 
         private State m_state;
@@ -81,7 +79,7 @@ namespace NetMQ.Core
         internal event EventHandler<PipeEventArgs> ReadActivated;
         internal event EventHandler<PipeEventArgs> WriteActivated;
         internal event EventHandler<PipeEventArgs> Hiccuped;
-        internal event EventHandler<PipeEventArgs> PipeDisposed;
+        internal event EventHandler<PipeEventArgs> PipeClosed;
 
         /// <summary>
         /// Pipe endpoint can store an opaque ID to be used by its clients.
@@ -217,7 +215,7 @@ namespace NetMQ.Core
         public void Flush()
         {
             //  The peer does not exist anymore at this point.
-            if (m_state != State.DisposeAckSent)
+            if (m_state != State.Closed)
             {
                 if (m_outpipe != null && m_outpipe.Flush() == ReaderStatus.Asleep)
                     CommandDispatcher.SendActivateRead(m_peer);
@@ -310,11 +308,11 @@ namespace NetMQ.Core
             }
         }
 
-        internal override void Process(PipeDisposeCommand command)
+        internal override void Process(ClosePipeCommand command)
         {
             //  This is the simple case of peer-induced dispose. If there are no
             //  more pending messages to read, or if the pipe was configured to drop
-            //  pending messages, we can move directly to the DisposeAckSent state.
+            //  pending messages, we can move directly to the Closed state.
             //  Otherwise we'll hang up in WaitingForDelimiter state till all
             //  pending messages are read.
             if (m_state == State.Active)
@@ -322,58 +320,36 @@ namespace NetMQ.Core
                 if (m_delay)
                     m_state = State.WaitingForDelimiter;
                 else
-                {
-                    m_state = State.DisposeAckSent;
-                    m_outpipe = null;
-                    CommandDispatcher.SendPipeDisposeAck(m_peer);
-                }
+                    CompleteClose();
             }
-            //  Delimiter happened to arrive before the dispose command. Now we have the
-            //  dispose command as well, so we can move straight to term_ack_sent state.
+            //  Delimiter happened to arrive before the close command. Now we have the
+            //  close command as well, so we can move straight to close state.
             else if (m_state == State.DelimiterReceived)
             {
-                m_state = State.DisposeAckSent;
-                m_outpipe = null;
-                CommandDispatcher.SendPipeDisposeAck(m_peer);
-            }
-            //  This is the case where both ends of the pipe are closed in parallel.
-            //  We simply reply to the request by ack and continue waiting for our
-            //  own ack.
-            else if (m_state == State.DisposeRequestSent1)
-            {
-                m_state = State.DisposeRequestSent2;
-                m_outpipe = null;
-                CommandDispatcher.SendPipeDisposeAck(m_peer);
+                CompleteClose();
             }
         }
 
-        internal override void Process(PipeDisposeAckCommand command)
+        private void CompleteClose()
         {
-            //  Notify the user that all the references to the pipe should be dropped.
-            var temp = PipeDisposed;
-            if (temp != null)
-            {
-                temp(this, new PipeEventArgs(this));
-            }
-
-            //  In term_ack_sent and term_req_sent2 states there's nothing to do.
-            //  Simply deallocate the pipe. In term_req_sent1 state we have to ack
-            //  the peer before deallocating this side of the pipe.
-            //  All the other states are invalid.
-            if (m_state == State.DisposeRequestSent1)
-            {
-                m_outpipe = null;
-                CommandDispatcher.SendPipeDisposeAck(m_peer);
-            }
+            m_outpipe = null;
+            m_state = State.Closed;
 
             //  We'll deallocate the inbound pipe, the peer will deallocate the outbound
             //  pipe (which is an inbound pipe from its point of view).
-            //  First, delete all the unread messages in the pipe. We have to do it by
+            //  Delete all the unread messages in the pipe. We have to do it by
             //  hand because Frame need to release buffer pool memory. 
             Frame frame;
             while (m_inpipe.TryRead(out frame))
             {
                 frame.Close();
+            }
+
+            //  Notify the user that all the references to the pipe should be dropped.
+            var temp = PipeClosed;
+            if (temp != null)
+            {
+                temp(this, new PipeEventArgs(this));
             }
         }
 
@@ -382,68 +358,47 @@ namespace NetMQ.Core
             if (m_state == State.Active)
                 m_state = State.DelimiterReceived;
             else
-            {
-                m_outpipe = null;
-                CommandDispatcher.SendPipeDisposeAck(m_peer);
-                m_state = State.DisposeAckSent;
-            }
+                CompleteClose();            
         }
 
-        public void Dispose(bool delay)
+        public void Close(bool delay)
         {
             //  Overload the value specified at pipe creation.
             m_delay = delay;
 
-            //  If terminate was already called, we can ignore the duplicit invocation.
-            //  If the pipe is in the final phase of async termination, it's going to
-            //  closed anyway. No need to do anything special here.            
-            if (m_state != State.DisposeRequestSent1 && m_state != State.DisposeRequestSent2 &&
-                m_state != State.DisposeAckSent)
+            //  Drop any unfinished outbound messages.
+            // TODO: rollback();
+            m_outActive = false;
+
+            //  If close was already called, we can ignore the duplicit invocation.
+            if (m_state != State.Closed)
             {
-                //  The simple sync termination case. Ask the peer to terminate and wait
-                //  for the ack.
+                //  The close case. Ask the peer to close
                 if (m_state == State.Active)
                 {
-                    CommandDispatcher.SendPipeDispose(m_peer);
-                    m_state = State.DisposeRequestSent1;
+                    if (m_outpipe != null)
+                    {
+                        //  Write the delimiter into the pipe. Note that watermarks are not
+                        //  checked; thus the delimiter can be written even when the pipe is full.
+                        Frame frame = new Frame();
+                        frame.Delimiter = true;
+                        m_outpipe.Write(ref frame, false);
+                        Flush();
+                    }
+
+                    CommandDispatcher.SendClosePipe(m_peer);
+                    CompleteClose();
                 }
-                    //  There are still pending messages available, but the user calls
-                    //  'Dispose'. We can act as if all the pending messages were read.
                 else if (m_state == State.WaitingForDelimiter)
                 {
-                    //  If there are pending messages still available, do nothing.
+                    //  There are still pending messages available, but the user calls
+                    //  'Close'. We can act as if all the pending messages were read.
                     if (!m_delay)
-                    {
-                        m_outpipe = null;
-                        CommandDispatcher.SendPipeDisposeAck(m_peer);
-                        m_state = State.DisposeAckSent;
-                    }
+                        CompleteClose();
                 }
-                    //  We've already got delimiter, but not dispose command yet. We can ignore
-                    //  the delimiter and ack synchronously dispose as if we were in
-                    //  active state.
-                else if (m_state == State.DelimiterReceived)
-                {
-                    CommandDispatcher.SendPipeDispose(m_peer);
-                    m_state = State.DisposeRequestSent1;
-                }
-
-                //  Stop outbound flow of messages.
-                m_outActive = false;
-
-                if (m_outpipe != null)
-                {
-                    //  Drop any unfinished outbound messages.
-                    // TODO: rollback();
-
-                    //  Write the delimiter into the pipe. Note that watermarks are not
-                    //  checked; thus the delimiter can be written even when the pipe is full.
-                    Frame frame = new Frame();
-                    frame.Delimiter = true;
-                    m_outpipe.Write(ref frame, false);
-                    Flush();   
-                }
+                
+                // We received delimiter but on the command yet, we will just wait for the command which complete the closing
             }
-        }       
+        }
     }
 }

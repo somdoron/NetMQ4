@@ -60,7 +60,6 @@
     <Compile Include="ReceivingSocketExtensions.cs" />
     <Compile Include="ISendingSocket.cs" />
     <Compile Include="ISocket.cs" />
-    <Compile Include="Core\SocketMailbox.cs" />
     <Compile Include="Frame.cs" />
     <Compile Include="NetMQException.cs" />
     <Compile Include="Core\Own.cs" />

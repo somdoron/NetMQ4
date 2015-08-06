@@ -21,18 +21,18 @@ namespace NetMQ.Tests
                 using (PairSocket connect = new PairSocket())
                 {
                     connect.Connect("inproc://test");
-                    
+
                     Assert.That(connect.HasOut);
                     Assert.That(bind.HasOut);
                     Assert.That(!bind.HasIn);
-                   
-                    Assert.That(connect.TrySendFrame("Hello"));                    
+
+                    Assert.That(connect.TrySendFrame("Hello"));
                     Assert.That(bind.HasIn);
 
                     string message;
 
                     Assert.That(bind.TryReceiveFrameString(out message));
-                    Assert.That(message == "Hello");                    
+                    Assert.That(message == "Hello");
                 }
             }
         }
@@ -41,10 +41,10 @@ namespace NetMQ.Tests
         public void ConnectBeforeBind()
         {
             using (PairSocket bind = new PairSocket())
-            {                
+            {
                 using (PairSocket connect = new PairSocket())
                 {
-                    connect.Connect("inproc://test");                                        
+                    connect.Connect("inproc://test");
                     bind.Bind("inproc://test");
 
                     Assert.That(connect.HasOut);
@@ -57,7 +57,7 @@ namespace NetMQ.Tests
                     string message;
 
                     Assert.That(bind.TryReceiveFrameString(out message));
-                    Assert.That(message == "Hello");           
+                    Assert.That(message == "Hello");
                 }
             }
         }

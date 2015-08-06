@@ -26,6 +26,6 @@ namespace NetMQ.Protocol
         protected internal abstract void OnReadActivated(Pipe pipe);
         protected internal abstract void OnWriteActivated(Pipe pipe);
         protected internal abstract void OnHiccuped(Pipe pipe);
-        protected internal abstract void OnPipeDisposed(Pipe pipe);
+        protected internal abstract void OnPipeClosed(Pipe pipe);
     }
 }

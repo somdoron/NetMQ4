@@ -87,36 +87,28 @@ namespace NetMQ.Core
         public YPipe<Frame>  Pipe { get; private set; }
     }
 
-    class PipeDisposeCommand : Command
+    class ClosePipeCommand : Command
     {
-        public PipeDisposeCommand(BaseObject destination)
+        public ClosePipeCommand(BaseObject destination)
             : base(destination)
         {
         }        
     }
 
-    class PipeDisposeAckCommand : Command
+    class CloseRequestCommand : Command
     {
-        public PipeDisposeAckCommand(BaseObject destination)
+        public CloseRequestCommand(BaseObject destination, Own child)
             : base(destination)
         {
-        }        
-    }
-
-    class DisposeRequestCommand : Command
-    {
-        public DisposeRequestCommand(BaseObject destination, Own child)
-            : base(destination)
-        {
-            Child = child;
+            Child = child;            
         }
 
-        public Own Child { get; private set; }        
+        public Own Child { get; private set; }
     }
 
-    class DisposeCommand : Command
+    class CloseCommand : Command
     {
-        public DisposeCommand(BaseObject destination, TimeSpan linger)
+        public CloseCommand(BaseObject destination, TimeSpan linger)
             : base(destination)
         {
             Linger = linger;
@@ -125,9 +117,9 @@ namespace NetMQ.Core
         public TimeSpan Linger { get; private set; }
     }
 
-    class DisposeAckCommand : Command
+    class CloseAckCommand : Command
     {
-        public DisposeAckCommand(BaseObject destination)
+        public CloseAckCommand(BaseObject destination)
             : base(destination)
         {
         }        

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -24,6 +25,26 @@ namespace NetMQ
         //  real-time behaviour (less latency peaks).
         private const int InboundPollRate = 100;
 
+        class SocketMailbox : IMailbox
+        {
+            private BlockingCollection<Command> m_queue;
+
+            public SocketMailbox()
+            {
+                m_queue = new BlockingCollection<Command>();
+            }
+
+            public bool TryReceive(TimeSpan timeout, out Command command)
+            {
+                return m_queue.TryTake(out command, timeout);
+            }
+
+            public void Send(Command command)
+            {
+                m_queue.Add(command);
+            }
+        }
+
         private SocketMailbox m_mailbox;
         private List<Pipe> m_pipes;
 
@@ -31,7 +52,7 @@ namespace NetMQ
 
         private Dictionary<string, Pipe> m_inprocs;        
 
-        private bool m_disposed;
+        private bool m_closed;
         private long m_lastTimestamp;
         private BaseProtocol m_protocol;
 
@@ -44,7 +65,7 @@ namespace NetMQ
 
             SlotId = SocketManager.AddMailbox(m_mailbox);            
             m_pipes = new List<Pipe>();
-            m_disposed = false;
+            m_closed = false;
             m_protocol = protocolFactory(Options);
             m_transports = new Dictionary<string, BaseTransport>();
         }
@@ -190,7 +211,7 @@ namespace NetMQ
             //  First, register the pipe so that we can terminate it later on.
             m_pipes.Add(pipe);
 
-            pipe.PipeDisposed += PipeDisposed;
+            pipe.PipeClosed += PipeClosed;
             pipe.WriteActivated += WriteActivated;
             pipe.ReadActivated += ReadActivated;
             pipe.Hiccuped += Hiccuped;
@@ -200,10 +221,10 @@ namespace NetMQ
 
             //  If the socket is already being closed, ask any new pipes to terminate
             //  straight away.
-            if (IsDisposing)
+            if (IsClosing)
             {
-                RegisterDisposeAcks(1);
-                pipe.Dispose(false);
+                RegisterCloseAcks(1);
+                pipe.Close(false);
             }
         }      
 
@@ -222,9 +243,9 @@ namespace NetMQ
             m_protocol.OnHiccuped(e.Pipe);
         }
 
-        private void PipeDisposed(object sender, PipeEventArgs e)
+        private void PipeClosed(object sender, PipeEventArgs e)
         {
-            m_protocol.OnPipeDisposed(e.Pipe);
+            m_protocol.OnPipeClosed(e.Pipe);
 
             bool found = false;
             string foundAddress = "";
@@ -244,7 +265,7 @@ namespace NetMQ
                 m_inprocs.Remove(foundAddress);
 
             //  Unregister to pipe events
-            e.Pipe.PipeDisposed -= PipeDisposed;
+            e.Pipe.PipeClosed -= PipeClosed;
             e.Pipe.WriteActivated -= WriteActivated;
             e.Pipe.ReadActivated -= ReadActivated;
             e.Pipe.Hiccuped -= Hiccuped;
@@ -253,8 +274,8 @@ namespace NetMQ
             //  dispose if we are already disposing.
             m_pipes.Remove(e.Pipe);            
 
-            if (IsDisposing)
-                UnregisterDisposeAck();
+            if (IsClosing)
+                UnregisterCloseAck();
         }
 
         private bool TryGetTransport(string protocol, out BaseTransport transport)
@@ -369,7 +390,7 @@ namespace NetMQ
                     if (!m_inprocs.TryGetValue(address, out pipe))
                         throw new ArgumentException("address was not foundand cannot be disconnected", "address");
 
-                    pipe.Dispose(true);
+                    pipe.Close(true);
                     m_inprocs.Remove(address);
 
                     break;
@@ -433,49 +454,49 @@ namespace NetMQ
             base.Process(command);
         }
 
-        internal override void Process(DisposeCommand command)
+        internal override void Process(CloseCommand command)
         {
             //  Unregister all inproc endpoints associated with this socket.
             //  Doing this we make sure that no new pipes from other sockets (inproc)
             //  will be initiated.
             InProcManager.UnregisterEndpoints(this);
 
-            //  Ask all attached pipes to dispose.
-            foreach (var pipe in m_pipes)
-            {
-                pipe.Dispose(false);
-            }
+            //  Pipes array can change during the closing method, so we take a copy
+            var pipes = m_pipes.ToArray();
 
-            RegisterDisposeAcks(m_pipes.Count);
+            RegisterCloseAcks(m_pipes.Count);
 
             base.Process(command);
-        }
 
-        protected override void ProcessDisposed()
-        {
-            m_disposed = true;
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-
-            if (m_disposed)
-                SocketManager.RemoveMailbox(SlotId);
-            else
+            //  Ask all attached pipes to dispose.
+            foreach (var pipe in pipes)
             {
-                // Completion in thread is not possible as Multiple inproc can be dependent on each other to complete dispose and might be using the same thread
-                ThreadPool.QueueUserWorkItem(s =>
-                {
-                    // wait until socket is disposed
-                    while (!m_disposed)
-                    {
-                        ProcessCommands(Timeout.InfiniteTimeSpan, false);
-                    }
+                pipe.Close(false);
+            }
+        }
 
-                    // Remove the mailbox from global
-                    SocketManager.RemoveMailbox(SlotId);
-                });
+        protected override void ProcessClosed()
+        {
+            m_closed = true;
+        }       
+
+        public void Dispose()
+        {
+            //  Process pending commands, if any.
+            ProcessCommands(TimeSpan.Zero, false);
+
+            if (!m_closed)
+            {
+                base.Close();
+
+                // wait until socket is disposed
+                while (!m_closed)
+                {
+                    ProcessCommands(Timeout.InfiniteTimeSpan, false);
+                }
+
+                // Remove the mailbox from global
+                SocketManager.RemoveMailbox(SlotId);
             }
         }        
     }
