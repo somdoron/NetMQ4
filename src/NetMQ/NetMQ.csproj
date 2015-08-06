@@ -46,6 +46,9 @@
     <Compile Include="Core\BaseObject.cs" />
     <Compile Include="Core\Command.cs" />
     <Compile Include="Core\CommandDispatcher.cs" />
+    <Compile Include="IDuplexSocket.cs" />
+    <Compile Include="IInSocket.cs" />
+    <Compile Include="IOutSocket.cs" />
     <Compile Include="SocketExtensions.cs" />
     <Compile Include="Transport\InProc\InProcManager.cs" />
     <Compile Include="ErrorCode.cs" />
@@ -56,9 +59,9 @@
     <Compile Include="Core\IEngine.cs" />
     <Compile Include="Core\IMailbox.cs" />
     <Compile Include="Core\IOThread.cs" />
-    <Compile Include="IReceivingSocket.cs" />
+    <Compile Include="IReceive.cs" />
     <Compile Include="ReceivingSocketExtensions.cs" />
-    <Compile Include="ISendingSocket.cs" />
+    <Compile Include="ISend.cs" />
     <Compile Include="ISocket.cs" />
     <Compile Include="Frame.cs" />
     <Compile Include="NetMQException.cs" />

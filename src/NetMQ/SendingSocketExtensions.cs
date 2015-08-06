@@ -19,7 +19,7 @@ namespace NetMQ
         /// </remarks>
         /// <param name="socket">The socket to send the message on.</param>
         /// <param name="frame">An object with message's data to send.</param>        
-        public static void SendFrame(this ISendingSocket socket, ref Frame frame)
+        public static void SendFrame(this ISend socket, ref Frame frame)
         {
             var result = socket.TrySendFrame(ref frame, Timeout.InfiniteTimeSpan);
             Debug.Assert(result);
@@ -32,10 +32,10 @@ namespace NetMQ
         /// <summary>
         /// Transmit a byte-array of data over this socket, block until frame is sent.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="data">the byte-array of data to send.</param>        
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
-        public static void SendFrame(this ISendingSocket socket, byte[] data, bool more = false)
+        public static void SendFrame(this ISend socket, byte[] data, bool more = false)
         {
             SendFrame(socket, data, data.Length, more);
         }
@@ -43,11 +43,11 @@ namespace NetMQ
         /// <summary>
         /// Transmit a byte-array of data over this socket, block until frame is sent.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="data">the byte-array of data to send.</param>
         /// <param name="length">the number of bytes to send from <paramref name="data"/>.</param>
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
-        public static void SendFrame(this ISendingSocket socket, byte[] data, int length, bool more = false)
+        public static void SendFrame(this ISend socket, byte[] data, int length, bool more = false)
         {
             var frame = new Frame(length);
             Buffer.BlockCopy(data, 0, frame.Data, 0, length);
@@ -61,9 +61,9 @@ namespace NetMQ
         /// Transmit a byte-array of data over this socket, block until frame is sent.
         /// Send more frame, another frame must be sent after this frame. Use to chain Send methods.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="data">the byte-array of data to send.</param>                
-        public static ISendingSocket SendMoreFrame(this ISendingSocket socket, byte[] data)
+        public static ISend SendMoreFrame(this ISend socket, byte[] data)
         {
             SendFrame(socket, data, true);
 
@@ -74,10 +74,10 @@ namespace NetMQ
         /// Transmit a byte-array of data over this socket, block until frame is sent.
         /// Send more frame, another frame must be sent after this frame. Use to chain Send methods.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="data">the byte-array of data to send.</param>        
         /// <param name="length">the number of bytes to send from <paramref name="data"/>.</param>        
-        public static ISendingSocket SendMoreFrame(this ISendingSocket socket, byte[] data, int length)
+        public static ISend SendMoreFrame(this ISend socket, byte[] data, int length)
         {
             SendFrame(socket, data, length, true);
 
@@ -92,13 +92,13 @@ namespace NetMQ
         /// Attempt to transmit a single frame on <paramref cref="socket"/>.
         /// If message cannot be sent within <paramref name="timeout"/>, return <c>false</c>.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="timeout">The maximum period of time to try to send a message.</param>
         /// <param name="data">the byte-array of data to send.</param>        
         /// <param name="length">the number of bytes to send from <paramref name="data"/>.</param>
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TrySendFrame(this ISendingSocket socket, TimeSpan timeout, byte[] data, int length, bool more = false)
+        public static bool TrySendFrame(this ISend socket, TimeSpan timeout, byte[] data, int length, bool more = false)
         {
             var frame = new Frame(length);
             Buffer.BlockCopy(data, 0, frame.Data, 0, length);
@@ -118,12 +118,12 @@ namespace NetMQ
         /// Attempt to transmit a single frame on <paramref cref="socket"/>.
         /// If message cannot be sent within <paramref name="timeout"/>, return <c>false</c>.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="timeout">The maximum period of time to try to send a message.</param>
         /// <param name="data">the byte-array of data to send.</param>                
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TrySendFrame(this ISendingSocket socket, TimeSpan timeout, byte[] data, bool more = false)
+        public static bool TrySendFrame(this ISend socket, TimeSpan timeout, byte[] data, bool more = false)
         {
             return TrySendFrame(socket, timeout, data, data.Length, more);
         }
@@ -136,11 +136,11 @@ namespace NetMQ
         /// Attempt to transmit a single frame on <paramref cref="socket"/>.
         /// If message cannot be sent immediately, return <c>false</c>.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>        
+        /// <param name="socket">the ISend to transmit on</param>        
         /// <param name="data">the byte-array of data to send.</param>                
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TrySendFrame(this ISendingSocket socket, byte[] data, bool more = false)
+        public static bool TrySendFrame(this ISend socket, byte[] data, bool more = false)
         {
             return TrySendFrame(socket, TimeSpan.Zero, data, more);
         }
@@ -149,12 +149,12 @@ namespace NetMQ
         /// Attempt to transmit a single frame on <paramref cref="socket"/>.
         /// If message cannot be sent immediately, return <c>false</c>.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>        
+        /// <param name="socket">the ISend to transmit on</param>        
         /// <param name="data">the byte-array of data to send.</param>            
         /// <param name="length">the number of bytes to send from <paramref name="data"/>.</param>    
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TrySendFrame(this ISendingSocket socket, byte[] data, int length, bool more = false)
+        public static bool TrySendFrame(this ISend socket, byte[] data, int length, bool more = false)
         {
             return TrySendFrame(socket, TimeSpan.Zero, data, length, more);
         }
@@ -170,10 +170,10 @@ namespace NetMQ
         /// <summary>
         /// Transmit a string over this socket, block until frame is sent.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="message">the string to send</param>        
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
-        public static void SendFrame(this ISendingSocket socket, string message, bool more = false)
+        public static void SendFrame(this ISend socket, string message, bool more = false)
         {
             // Count the number of bytes required to encode the string.
             // Note that non-ASCII strings may not have an equal number of characters
@@ -193,9 +193,9 @@ namespace NetMQ
         /// Transmit a string over this socket, block until frame is sent.
         /// Send more frame, another frame must be sent after this frame. Use to chain Send methods.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="message">the string to send</param>           
-        public static ISendingSocket SendMoreFrame(this ISendingSocket socket, string message)
+        public static ISend SendMoreFrame(this ISend socket, string message)
         {
             SendFrame(socket, message, true);
 
@@ -210,12 +210,12 @@ namespace NetMQ
         /// Attempt to transmit a single string frame on <paramref cref="socket"/>.
         /// If message cannot be sent within <paramref name="timeout"/>, return <c>false</c>.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>
+        /// <param name="socket">the ISend to transmit on</param>
         /// <param name="timeout">The maximum period of time to try to send a message.</param>
         /// <param name="message">the string to send</param>                
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TrySendFrame(this ISendingSocket socket, TimeSpan timeout, string message, bool more = false)
+        public static bool TrySendFrame(this ISend socket, TimeSpan timeout, string message, bool more = false)
         {
             // Count the number of bytes required to encode the string.
             // Note that non-ASCII strings may not have an equal number of characters
@@ -245,11 +245,11 @@ namespace NetMQ
         /// Attempt to transmit a single string frame on <paramref cref="socket"/>.
         // If message cannot be sent immediately, return <c>false</c>.
         /// </summary>
-        /// <param name="socket">the ISendingSocket to transmit on</param>        
+        /// <param name="socket">the ISend to transmit on</param>        
         /// <param name="message">the string to send</param>                
         /// <param name="more">set this flag to true to signal that you will be immediately sending another frame (optional: default is false)</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TrySendFrame(this ISendingSocket socket, string message, bool more = false)
+        public static bool TrySendFrame(this ISend socket, string message, bool more = false)
         {
             return TrySendFrame(socket, TimeSpan.Zero, message, more);
         }

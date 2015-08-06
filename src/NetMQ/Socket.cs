@@ -15,7 +15,7 @@ using NetMQ.Util;
 
 namespace NetMQ
 {
-    public class Socket : Own, IReceivingSocket, ISendingSocket, ISocket
+    public class Socket : Own, ISocket
     {
         //  Determines how often does socket poll for new commands when it
         //  still has unprocessed messages to handle. Thus, if it is set to 100,
@@ -70,7 +70,7 @@ namespace NetMQ
             m_transports = new Dictionary<string, BaseTransport>();
         }
 
-        public bool HasOut
+        protected bool HasOutInternal
         {
             get
             {
@@ -79,7 +79,7 @@ namespace NetMQ
             }
         }
 
-        public bool HasIn
+        protected bool HasInInternal
         {
             get
             {
@@ -88,7 +88,7 @@ namespace NetMQ
             }
         }
 
-        public bool TrySendFrame(ref Frame frame, TimeSpan timeout)
+        protected bool TrySendFrameInternal(ref Frame frame, TimeSpan timeout)
         {
             //  Process pending commands, if any.
             ProcessCommands(TimeSpan.Zero, true);
@@ -132,7 +132,7 @@ namespace NetMQ
             }            
         }
 
-        public bool TryReceiveFrame(ref Frame frame, TimeSpan timeout)
+        protected bool TryReceiveFrameInternal(ref Frame frame, TimeSpan timeout)
         {
             //  Once every InboundPollRate messages check for signals and process
             //  incoming commands. This happens only if we are not polling altogether

@@ -3,8 +3,9 @@ using System.Threading.Tasks;
 
 namespace NetMQ
 {
-    public interface IReceivingSocket
+    public interface IReceive
     {
+        bool HasIn { get; }
         bool TryReceiveFrame(ref Frame frame, TimeSpan timeout);
     }
 }

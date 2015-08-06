@@ -19,7 +19,7 @@ namespace NetMQ
         /// </remarks>
         /// <param name="socket">The socket to receive from.</param>
         /// <param name="frame">An object to receive the frame's data into.</param>
-        public static void ReceiveFrame(this IReceivingSocket socket, ref Frame frame)
+        public static void ReceiveFrame(this IReceive socket, ref Frame frame)
         {
             var result = socket.TryReceiveFrame(ref frame, Timeout.InfiniteTimeSpan);
             Debug.Assert(result);
@@ -34,7 +34,7 @@ namespace NetMQ
         /// </summary>
         /// <param name="socket">The socket to receive from.</param>
         /// <returns>The content of the received message frame.</returns>        
-        public static byte[] ReceiveFrameBytes(this IReceivingSocket socket)
+        public static byte[] ReceiveFrameBytes(this IReceive socket)
         {
             bool more;
             return socket.ReceiveFrameBytes(out more);
@@ -47,7 +47,7 @@ namespace NetMQ
         /// <param name="socket">The socket to receive from.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns>The content of the received message frame.</returns>        
-        public static byte[] ReceiveFrameBytes(this IReceivingSocket socket, out bool more)
+        public static byte[] ReceiveFrameBytes(this IReceive socket, out bool more)
         {
             var frame = new Frame();            
 
@@ -69,7 +69,7 @@ namespace NetMQ
         /// <param name="bytes">Array to populate with the frame data. If pre-allocated and large enough the allocated array will be used. Otherwise new array will be allocated.</param>                
         /// <param name="length">The length of the frame receieved.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
-        public static void ReceiveFrameBytes(this IReceivingSocket socket, ref byte[] bytes, out int length, out bool more)
+        public static void ReceiveFrameBytes(this IReceive socket, ref byte[] bytes, out int length, out bool more)
         {
             var frame = new Frame();
             socket.ReceiveFrame(ref frame);
@@ -96,7 +96,7 @@ namespace NetMQ
         /// <param name="socket">The socket to receive from.</param>
         /// <param name="bytes">The content of the received message frame, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, out byte[] bytes)
+        public static bool TryReceiveFrameBytes(this IReceive socket, out byte[] bytes)
         {
             bool more;
             return socket.TryReceiveFrameBytes(out bytes, out more);
@@ -111,7 +111,7 @@ namespace NetMQ
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <param name="bytes">The content of the received message frame, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, out byte[] bytes, out bool more)
+        public static bool TryReceiveFrameBytes(this IReceive socket, out byte[] bytes, out bool more)
         {
             return socket.TryReceiveFrameBytes(TimeSpan.Zero, out bytes, out more);
         }
@@ -126,7 +126,7 @@ namespace NetMQ
         /// <param name="length">The length of the frame receieved.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>        
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, ref byte[] bytes, out int length, out bool more)
+        public static bool TryReceiveFrameBytes(this IReceive socket, ref byte[] bytes, out int length, out bool more)
         {
             return socket.TryReceiveFrameBytes(TimeSpan.Zero, ref bytes, out length, out more);
         }
@@ -139,7 +139,7 @@ namespace NetMQ
         /// <param name="bytes">The content of the received message frame. If pre-allocated and large enough the allocated array will be used. Otherwise new array will be allocated.</param>
         /// <param name="length">The length of the frame receieved.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, ref byte[] bytes, out int length)
+        public static bool TryReceiveFrameBytes(this IReceive socket, ref byte[] bytes, out int length)
         {
             return socket.TryReceiveFrameBytes(TimeSpan.Zero, ref bytes, out length);
         }
@@ -156,7 +156,7 @@ namespace NetMQ
         /// <param name="timeout">The maximum period of time to wait for a message to become available.</param>
         /// <param name="bytes">The content of the received message frame, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, TimeSpan timeout, out byte[] bytes)
+        public static bool TryReceiveFrameBytes(this IReceive socket, TimeSpan timeout, out byte[] bytes)
         {
             bool more;
             return socket.TryReceiveFrameBytes(timeout, out bytes, out more);
@@ -172,7 +172,7 @@ namespace NetMQ
         /// <param name="timeout">The maximum period of time to wait for a message to become available.</param>
         /// <param name="bytes">The content of the received message frame, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, TimeSpan timeout, out byte[] bytes, out bool more)
+        public static bool TryReceiveFrameBytes(this IReceive socket, TimeSpan timeout, out byte[] bytes, out bool more)
         {
             var frame = new Frame();           
 
@@ -202,7 +202,7 @@ namespace NetMQ
         /// <param name="length">The length of the frame receieved.</param>        
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>               
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, TimeSpan timeout, ref byte[] bytes, out int length, out bool more)
+        public static bool TryReceiveFrameBytes(this IReceive socket, TimeSpan timeout, ref byte[] bytes, out int length, out bool more)
         {
             var frame = new Frame();
 
@@ -236,7 +236,7 @@ namespace NetMQ
         /// <param name="bytes">The content of the received message frame. If pre-allocated and large enough the allocated array will be used. Otherwise new array will be allocated.</param>
         /// <param name="length">The length of the frame receieved.</param>                
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameBytes(this IReceivingSocket socket, TimeSpan timeout, ref byte[] bytes, out int length)
+        public static bool TryReceiveFrameBytes(this IReceive socket, TimeSpan timeout, ref byte[] bytes, out int length)
         {
             bool more;
             return socket.TryReceiveFrameBytes(timeout, ref bytes, out length, out more);
@@ -255,7 +255,7 @@ namespace NetMQ
         /// </summary>
         /// <param name="socket">The socket to receive from.</param>
         /// <returns>The content of the received message frame as a string.</returns>
-        public static string ReceiveFrameString(this IReceivingSocket socket)
+        public static string ReceiveFrameString(this IReceive socket)
         {
             bool more;
             return socket.ReceiveFrameString(SendReceiveConstants.DefaultEncoding, out more);
@@ -268,7 +268,7 @@ namespace NetMQ
         /// <param name="socket">The socket to receive from.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns>The content of the received message frame.</returns>        
-        public static string ReceiveFrameString(this IReceivingSocket socket, out bool more)
+        public static string ReceiveFrameString(this IReceive socket, out bool more)
         {
             return socket.ReceiveFrameString(SendReceiveConstants.DefaultEncoding, out more);
         }
@@ -279,7 +279,7 @@ namespace NetMQ
         /// <param name="socket">The socket to receive from.</param>
         /// <param name="encoding">The encoding used to convert the frame's data to a string.</param>
         /// <returns>The content of the received message frame as a string.</returns>        
-        public static string ReceiveFrameString(this IReceivingSocket socket, Encoding encoding)
+        public static string ReceiveFrameString(this IReceive socket, Encoding encoding)
         {
             bool more;
             return socket.ReceiveFrameString(encoding, out more);
@@ -293,7 +293,7 @@ namespace NetMQ
         /// <param name="encoding">The encoding used to convert the frame's data to a string.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns>The content of the received message frame as a string.</returns>        
-        public static string ReceiveFrameString(this IReceivingSocket socket, Encoding encoding, out bool more)
+        public static string ReceiveFrameString(this IReceive socket, Encoding encoding, out bool more)
         {
             var frame = new Frame();
 
@@ -320,7 +320,7 @@ namespace NetMQ
         /// <param name="socket">The socket to receive from.</param>
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, out string frameString)
+        public static bool TryReceiveFrameString(this IReceive socket, out string frameString)
         {
             bool more;
             return socket.TryReceiveFrameString(TimeSpan.Zero, SendReceiveConstants.DefaultEncoding, out frameString, out more);
@@ -334,7 +334,7 @@ namespace NetMQ
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, out string frameString, out bool more)
+        public static bool TryReceiveFrameString(this IReceive socket, out string frameString, out bool more)
         {
             return socket.TryReceiveFrameString(TimeSpan.Zero, SendReceiveConstants.DefaultEncoding, out frameString, out more);
         }
@@ -347,7 +347,7 @@ namespace NetMQ
         /// <param name="encoding">The encoding used to convert the frame's data to a string.</param>
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, Encoding encoding, out string frameString)
+        public static bool TryReceiveFrameString(this IReceive socket, Encoding encoding, out string frameString)
         {
             bool more;
             return socket.TryReceiveFrameString(TimeSpan.Zero, encoding, out frameString, out more);
@@ -362,7 +362,7 @@ namespace NetMQ
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, Encoding encoding, out string frameString, out bool more)
+        public static bool TryReceiveFrameString(this IReceive socket, Encoding encoding, out string frameString, out bool more)
         {
             return socket.TryReceiveFrameString(TimeSpan.Zero, encoding, out frameString, out more);
         }
@@ -379,7 +379,7 @@ namespace NetMQ
         /// <param name="timeout">The maximum period of time to wait for a message to become available.</param>
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, TimeSpan timeout, out string frameString)
+        public static bool TryReceiveFrameString(this IReceive socket, TimeSpan timeout, out string frameString)
         {
             bool more;
             return socket.TryReceiveFrameString(timeout, SendReceiveConstants.DefaultEncoding, out frameString, out more);
@@ -394,7 +394,7 @@ namespace NetMQ
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, TimeSpan timeout, out string frameString, out bool more)
+        public static bool TryReceiveFrameString(this IReceive socket, TimeSpan timeout, out string frameString, out bool more)
         {
             return socket.TryReceiveFrameString(timeout, SendReceiveConstants.DefaultEncoding, out frameString, out more);
         }
@@ -408,7 +408,7 @@ namespace NetMQ
         /// <param name="encoding">The encoding used to convert the frame's data to a string.</param>
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, TimeSpan timeout, Encoding encoding, out string frameString)
+        public static bool TryReceiveFrameString(this IReceive socket, TimeSpan timeout, Encoding encoding, out string frameString)
         {
             bool more;
             return socket.TryReceiveFrameString(timeout, encoding, out frameString, out more);
@@ -424,7 +424,7 @@ namespace NetMQ
         /// <param name="frameString">The content of the received message frame as a string, or <c>null</c> if no message was available.</param>
         /// <param name="more"><c>true</c> if another frame of the same message follows, otherwise <c>false</c>.</param>
         /// <returns><c>true</c> if a message was available, otherwise <c>false</c>.</returns>
-        public static bool TryReceiveFrameString(this IReceivingSocket socket, TimeSpan timeout, Encoding encoding, out string frameString, out bool more)
+        public static bool TryReceiveFrameString(this IReceive socket, TimeSpan timeout, Encoding encoding, out string frameString, out bool more)
         {
             var frame = new Frame();
 

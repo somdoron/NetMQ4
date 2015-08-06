@@ -12,6 +12,8 @@ namespace NetMQ
         void Unbind(string address);
 
         void Connect(string address);
-        void Disconnect(string address);      
+        void Disconnect(string address);              
+
+        SocketOptions Options { get; }
     }
 }

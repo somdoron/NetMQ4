@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace NetMQ
 {
-    public interface ISendingSocket
+    public interface ISend
     {
+        bool HasOut { get; }
         bool TrySendFrame(ref Frame frame, TimeSpan timeout);
     }
 }
